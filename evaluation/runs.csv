@@ -1,0 +1,7 @@
+run,started_at,prompt,category_match,urgency_match,urgency_errors,avg_prompt_tokens,avg_completion_tokens,avg_total_tokens,avg_execution_ms
+1,2026-11-02T13:09:03-03:00,v2.1,1.00,1.00,,867.80,382.55,1250.35,18441.45
+2,2026-11-02T13:48:53-03:00,v1,1.00,0.95,SMS estranho em nome do RH (got medium),652.80,325.15,977.95,18203.80
+3,2026-11-02T14:03:31-03:00,v1,1.00,1.00,,652.80,328.25,981.05,18275.30
+4,2026-11-02T14:14:22-03:00,v1,1.00,0.90,SMS estranho em nome do RH (not inspected); Sistema de ponto lento (not inspected),652.80,334.65,987.45,17842.25
+5,2026-11-02T14:21:45-03:00,v2.1,1.00,0.95,Sistema de ponto lento (not inspected),868.80,391.95,1260.75,17902.40
+6,2026-11-02T14:28:06-03:00,v2.1,1.00,0.95,Sistema de ponto lento (got high),868.80,364.00,1232.80,17749.90
