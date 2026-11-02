@@ -1,0 +1,642 @@
+{
+  "name": "AI Ticket Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Abrir chamado de TI",
+        "formDescription": "Descreva o problema. O suporte responde em breve.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "subject",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "description",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        -160
+      ],
+      "id": "5e874e90-7b06-447f-8842-3f2227a87987",
+      "name": "ReceiveTicket"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=   Assunto: {{ $json.subject }}\n   Descrição: {{ $json.description }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Você é um analista de suporte de TI nível 1. Classifique o chamado usando só as informações dele. Não invente fatos.   Categorias: access (senha, login, permissão), hardware (computador, impressora, periféricos), software (programas e sistemas), network (internet, Wi-Fi, VPN), security (phishing, vírus, vazamento), other.   Urgência: - high: trabalho parado para várias pessoas, sistema fora do ar ou risco de segurança. Golpe, phishing ou tentativa de fraude recebidos são sempre high, mesmo que a pessoa não tenha clicado, porque outras pessoas podem ter recebido o mesmo. - medium: uma pessoa parada, ou serviço lento mas com alternativa. Afetar uma pessoa só não basta: ela precisa estar parada. - low: dúvida, pedido ou problema que incomoda mas não impede ninguém de trabalhar, inclusive dúvidas e pedidos sobre segurança quando nenhum incidente aconteceu.   Escreva em português do Brasil. A resposta sugerida tem no máximo 3 frases e segue estas regras: - Não diz quando algo vai acontecer: sem prazos e sem promessas de rapidez, como \"em alguns minutos\", \"imediatamente\" ou \"o mais rápido possível\". - Fala das ações do suporte só no futuro, como \"vamos verificar\", nunca no presente ou no passado, como \"estamos verificando\" ou \"identificamos que\", porque o suporte ainda não agiu. - Não afirma causas nem diagnósticos. - Só em pedidos de desbloqueio, troca de senha ou liberação de acesso, diz que o suporte vai confirmar a identidade da pessoa antes, sem prometer o desbloqueio. Nos outros chamados, não fala de identidade. - Não oferece troca de equipamento nem pergunta preferência de modelo; diz só que o suporte vai avaliar.   O motivo tem no máximo 1 frase. "
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        224,
+        -256
+      ],
+      "id": "a9845d4c-66c6-4271-8f37-39b156e3f027",
+      "name": "ClassifyTicket",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"category\": { \"type\": \"string\", \"enum\": [\"access\", \"hardware\", \"software\", \"network\", \"security\", \"other\"] },\n    \"urgency\": { \"type\": \"string\", \"enum\": [\"low\", \"medium\", \"high\"] },\n    \"suggested_reply\": { \"type\": \"string\" },\n    \"reason\": { \"type\": \"string\" }\n  },\n  \"required\": [\"category\", \"urgency\", \"suggested_reply\", \"reason\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        48
+      ],
+      "id": "5363bf5b-abdb-490d-892e-281fc865ffe3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        224,
+        48
+      ],
+      "id": "25a5342e-9e39-4def-8771-b8a6ed831b03",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b5d335e-0727-484f-9e07-7382f8f7ab3e",
+              "name": "ticket_id",
+              "value": "={{ $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "56d62d8e-bf85-4e47-a0f1-70117eb9e0cc",
+              "name": "received_at",
+              "value": "={{ $('ReceiveTicket').item.json.submittedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "37533a0e-5625-4051-a1dc-7a0e71a33b00",
+              "name": "name",
+              "value": "={{ $('ReceiveTicket').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "a1928ce1-9d6d-4ae7-b778-5c811c709b9e",
+              "name": "email",
+              "value": "={{ $('ReceiveTicket').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "66adbf4d-c90d-4952-8ae7-c668d6fd08e4",
+              "name": "subject",
+              "value": "={{ $('ReceiveTicket').item.json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "cd6febc0-bce1-4880-9f32-a6b2062a1195",
+              "name": "description",
+              "value": "={{ $('ReceiveTicket').item.json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "61e9e279-4a82-418a-944f-98203ec8055b",
+              "name": "category",
+              "value": "={{ $json.output.category }}",
+              "type": "string"
+            },
+            {
+              "id": "87ca4858-34d8-4036-b991-35259cf7ed1c",
+              "name": "urgency",
+              "value": "={{ $json.output.urgency }}",
+              "type": "string"
+            },
+            {
+              "id": "531540ea-da11-433f-997c-064a8aacfc6c",
+              "name": "suggested_reply",
+              "value": "={{ $json.output.suggested_reply }}",
+              "type": "string"
+            },
+            {
+              "id": "f6cbb3a2-5c52-4034-9763-4fa2e58f4392",
+              "name": "reason",
+              "value": "={{ $json.output.reason }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        -160
+      ],
+      "id": "87055185-0c9a-4907-b1a1-6263f6caa3a8",
+      "name": "FormatTicket"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "first tab"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ticket_id",
+              "displayName": "ticket_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "suggested_reply",
+              "displayName": "suggested_reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1024,
+        -160
+      ],
+      "id": "e91e45fa-e553-400e-803c-e10d2bea4309",
+      "name": "SaveTicket",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "bfe67ff1-3e8a-4c69-9a54-393f59eb7dae",
+              "leftValue": "={{ $json.urgency }}",
+              "rightValue": "=high",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1248,
+        -160
+      ],
+      "id": "171ae3bd-32e5-440c-a27b-56438fb3afa2",
+      "name": "IsUrgent"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "=[URGENTE] Chamado {{ $json.ticket_id }}: {{ $json.subject }}",
+        "emailType": "text",
+        "message": "=Chamado {{ $json.ticket_id }} classificado como urgente.\n\nSolicitante: {{ $json.name }} ({{ $json.email }})\nCategoria: {{ $json.category }}\nMotivo: {{ $json.reason }}\n\nDescrição:\n{{ $json.description }}\n\nResposta sugerida (revise antes de enviar):\n{{ $json.suggested_reply }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1536,
+        -176
+      ],
+      "id": "94bc9ad6-ada1-4ec4-88dd-3eb12c1bdc67",
+      "name": "AlertUrgent",
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "source": "googleSheets",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "eval",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.evaluationTrigger",
+      "typeVersion": 4.7,
+      "position": [
+        -224,
+        -352
+      ],
+      "id": "c713dbfa-e2ee-4502-b257-ea0deaa809a9",
+      "name": "EvalDataset",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        -352
+      ],
+      "id": "fe0f2045-a966-400d-9b3e-009d814a479e",
+      "name": "PaceRequests"
+    },
+    {
+      "parameters": {
+        "operation": "checkIfEvaluating"
+      },
+      "type": "n8n-nodes-base.evaluation",
+      "typeVersion": 4.8,
+      "position": [
+        576,
+        -256
+      ],
+      "id": "d0357f48-119c-4729-8454-f05f30947b12",
+      "name": "IsEvaluating"
+    },
+    {
+      "parameters": {
+        "source": "googleSheets",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "eval",
+          "mode": "name"
+        },
+        "outputs": {
+          "values": [
+            {
+              "outputName": "actual_category",
+              "outputValue": "={{ $('ClassifyTicket').first().json.output.category }}"
+            },
+            {
+              "outputName": "actual_urgency",
+              "outputValue": "={{ $('ClassifyTicket').first().json.output.urgency }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.evaluation",
+      "typeVersion": 4.8,
+      "position": [
+        800,
+        -352
+      ],
+      "id": "64b3fe98-ed7f-4bb8-b12c-98ba8512cfe9",
+      "name": "RecordResult",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "setMetrics",
+        "metric": "customMetrics",
+        "metrics": {
+          "assignments": [
+            {
+              "name": "category_match",
+              "value": "={{ $('EvalDataset').first().json.expected_category === $('ClassifyTicket').first().json.output.category ? 1 : 0 }}",
+              "type": "number",
+              "id": "cbab0d6e-2048-4160-9d69-b8a88c36f24e"
+            },
+            {
+              "id": "cf59d707-8341-42bd-9d9b-fa8862016d78",
+              "name": "urgency_match",
+              "value": "={{ $('EvalDataset').first().json.expected_urgency === $('ClassifyTicket').first().json.output.urgency ? 1 : 0 }}",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.evaluation",
+      "typeVersion": 4.8,
+      "position": [
+        1024,
+        -352
+      ],
+      "id": "87f29143-fdc9-417c-b28d-d04a085591e0",
+      "name": "ScoreResult"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "ReceiveTicket": {
+      "main": [
+        [
+          {
+            "node": "ClassifyTicket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "ClassifyTicket",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ClassifyTicket",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ClassifyTicket": {
+      "main": [
+        [
+          {
+            "node": "IsEvaluating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FormatTicket": {
+      "main": [
+        [
+          {
+            "node": "SaveTicket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SaveTicket": {
+      "main": [
+        [
+          {
+            "node": "IsUrgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsUrgent": {
+      "main": [
+        [
+          {
+            "node": "AlertUrgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EvalDataset": {
+      "main": [
+        [
+          {
+            "node": "PaceRequests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PaceRequests": {
+      "main": [
+        [
+          {
+            "node": "ClassifyTicket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsEvaluating": {
+      "main": [
+        [
+          {
+            "node": "RecordResult",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FormatTicket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RecordResult": {
+      "main": [
+        [
+          {
+            "node": "ScoreResult",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": []
+}

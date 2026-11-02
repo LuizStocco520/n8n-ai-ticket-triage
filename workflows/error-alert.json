@@ -1,0 +1,63 @@
+{
+  "name": "Error Alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "205bf8f9-2bca-4040-b800-73bf06a1fdc9",
+      "name": "OnError"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "=[ERRO] {{ $json.workflow.name }}: falhou em {{ $json.execution.lastNodeExecuted }}",
+        "emailType": "text",
+        "message": "=O workflow {{ $json.workflow.name }} falhou.\nNó: {{ $json.execution.lastNodeExecuted }}\nErro: {{ $json.execution.error.message }}\nExecução: {{ $json.execution.url }}\nOs dados do chamado estão nessa execução.\nAbra o link para recuperá-los.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "3db821d4-d40e-4aac-abc5-acd5803b4173",
+      "name": "AlertError",
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OnError": {
+      "main": [
+        [
+          {
+            "node": "AlertError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": []
+}
