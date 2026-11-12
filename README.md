@@ -2,6 +2,8 @@
 
 An n8n workflow that receives IT support tickets through a form, uses an LLM to classify each one by category and urgency and draft a reply, stores every ticket in a Google Sheet, and emails an alert for high-urgency tickets. An error workflow reports failures, and a built-in evaluation measures how often the classification is right.
 
+**Follow-up:** [a red-team test of this bot](https://github.com/LuizStocco520/n8n-ai-triage-redteam), with 37 prompt-injection and data-leak attacks, layered defenses and what they cost.
+
 ![Workflow](screenshots/01-canvas.png)
 
 ## Results
@@ -118,7 +120,7 @@ Tested on n8n Cloud in November 2026; the node versions are in the workflow file
 ## Next steps
 
 - Score the suggested replies automatically, with forbidden-phrase checks or a second model as a judge.
-- Prompt-injection testing based on the [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/).
+- Prompt-injection testing based on the [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/): done in [n8n-ai-triage-redteam](https://github.com/LuizStocco520/n8n-ai-triage-redteam).
 - Clarify the boundary between high and medium, and test it on new tickets.
 - A fallback path that saves tickets the model could not classify.
 
